@@ -4,4 +4,5 @@ a integrated server so Vortex Plus AIS users can access stuff that the extension
 
 Join our community: `https://discord.gg/Q8wZHJ8PuF`
 
-Version 1.0
+## Version 1.0
+- Code now open sourced.
