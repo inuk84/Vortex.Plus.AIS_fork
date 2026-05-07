@@ -63,11 +63,9 @@ pub async fn init() {
             let parts: Vec<&str> = msg.content.split_whitespace().collect();
             let client = reqwest::Client::new();
 
-            if parts.get(0) == Some(&"help") {
+            if parts.get(0) == Some(&"help") || parts.get(0) == Some(&"commands") {
                 let text = format!("
-                **Commands**\n
-                - whois|fetch <id> : finds user info by ID\n
-                ");
+                **Commands**\nwhoisid|OR|fetch <id> : finds user info by ID\n");
                 let _ = msg.channel_id.say(&ctx.http, text).await;
             }
 
