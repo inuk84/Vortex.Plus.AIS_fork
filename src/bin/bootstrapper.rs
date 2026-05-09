@@ -87,9 +87,6 @@ impl App {
 
         match launch_vortex() {
             Ok(()) => {
-                self.status = "Vortex+ launched.".to_string();
-                self.push_log("Launch completed.");
-                // TODO: launch
                 std::process::exit(0);
             }
             Err(err) => {
