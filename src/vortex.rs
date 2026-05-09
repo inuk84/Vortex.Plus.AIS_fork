@@ -9,6 +9,7 @@ use tao::{
     window::WindowBuilder,
 };
 use wry::{WebViewBuilder, WebViewBuilderExtWindows, http};
+use std::path::Path;
 
 fn main() -> wry::Result<()> {
     println!("Launching Vortex");
@@ -53,16 +54,12 @@ fn main() -> wry::Result<()> {
                         .unwrap();
                 }
             };
-            let ctype = if file.ends_with(".js") {
-                "application/javascript"
-            } else if file.ends_with(".css") {
-                "text/css"
-            } else if file.ends_with(".png") {
-                "image/png"
-            } else if file.ends_with(".jpeg") || file.ends_with(".jpg") {
-                "image/jpeg"
-            } else {
-                "text/plain"
+            let ctype = match Path::new(file).extension().and_then(|e| e.to_str()) {
+                Some("js") => "application/javascript",
+                Some("css") => "text/css",
+                Some("png") => "image/png",
+                Some("jpg") | Some("jpeg") => "image/jpeg",
+                _ => "text/plain",
             };
             http::Response::builder()
                 .status(200)
