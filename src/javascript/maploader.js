@@ -1,4 +1,7 @@
+//Made by inuk
+//this script is responsible for loading custom maps and games
 (async function () {
+
     let mapsLoaded = []
 
     async function loadMapUrl(name, url) {
@@ -77,21 +80,60 @@
             creatorId: 1961,
             gameId: -1,
 
-            spawnX: 330,
-            spawnY: 100,
-            spawnZ: 27,
+            spawnPoints: [[330, 100, 27]],
+
+            SWORD_FIGHT: true,
         }, //added by Inuk, 6/5/2026, added a ramp to enter the map more easily
+
+        {
+            name: "Sword Fights on the Heights",
+            url: "https://pastebin.com/raw/DRyzkQ7s",
+            picture: "https://tr.rbxcdn.com/180DAY-4884ac5cad0006f5c02e2a7ef0903a41/256/256/Image/Webp/noFilter",
+            bannerpicture: "https://static.wikia.nocookie.net/roblox/images/8/84/Sword_Fight_on_the_Heights_Original_Thumbnail.png/revision/latest?cb=20170114113709",
+            description: "Classic Roblox Sword Fights on the Heights map, with sword system made by Inuk!",
+            creatorName: 'Inuk',
+            creatorId: 1961,
+            gameId: -2,
+
+            spawnPoints: [[-882.333740234375, 14.200042724609375, 1286.9000244140626], [-1151.333740234375, 506.2000732421875, 872.9000244140625], [-1150.333740234375, 633.4000244140625, 855.9000244140625], [-1081.333740234375, 689.8001098632813, 1322.9000244140626], [-1150.333740234375, 633.4000244140625, 847.9000244140625], [-1320.333740234375, 275.80010986328127, 1015.9000244140625], [-874.333740234375, 14.200042724609375, 1286.9000244140626], [-1222.333740234375, 155.800048828125, 1376.9000244140626], [-1298.333740234375, 40.60003662109375, 1349.9000244140626], [-1418.333740234375, 272.2000427246094, 1107.9000244140626], [-1204.333740234375, 505.4000549316406, 1161.9000244140626], [-1281.333740234375, 286.6000671386719, 1240.9000244140626], [-1180.333740234375, 247.0000457763672, 1135.9000244140626], [-1180.333740234375, 247.0000457763672, 1187.9000244140626], [-1232.333740234375, 247.0000457763672, 1187.9000244140626], [-1232.333740234375, 247.0000457763672, 1135.9000244140626], [-1206.333740234375, 247.0000457763672, 1359.9000244140626], [-1052.333740234375, 136.6000518798828, 1302.9000244140626], [-1217.333740234375, 247.0000457763672, 1013.9000244140625], [-1328.333740234375, 275.8000793457031, 1007.9000244140625], [-1410.333740234375, 339.4000549316406, 1016.9000244140625], [-1103.333740234375, 339.4000549316406, 1073.9000244140626], [-1143.333740234375, 339.4000549316406, 1277.9000244140626], [-1083.333740234375, 136.60003662109376, 1331.9000244140626], [-1121.333740234375, 339.4000549316406, 1014.9000244140625], [-1185.333740234375, 40.60003662109375, 1275.9000244140626], [-1678.333740234375, 386.2000427246094, 1210.9000244140626], [-1678.333740234375, 386.2000427246094, 1273.9000244140626], [-1416.333740234375, 57.4000244140625, 1399.9000244140626], [-1059.333740234375, 218.20004272460938, 1220.9000244140626]],
+
+            skyColor: 0xFFB540,
+
+            SWORD_FIGHT: true,
+            VOID_DIE: true,
+        }, //added by Inuk, 9/5/2026, added a ramp to enter the map more easily
     ];
 
+    function defSpawnPoint() {
+        let cx = 0;
+        let cy = 10;
+        let cz = 0;
+        return { x: cx, y: cy, z: cz }
+    }
+    function chooseSpawnPoint(m) {
+        if(!m) return defSpawnPoint()
+        let entry = m.spawnPoints[Math.round(Math.random() * (m.spawnPoints.length - 1))]
+        let cx = entry[0]
+        let cy = entry[1]
+        let cz = entry[2]
+        return { x: cx, y: cy, z: cz }
+    }
 
-
+    window.chooseSpawnPoint = chooseSpawnPoint;
 
     var url_string = document.URL;
     var url = new URL(url_string);
     var gamei = url.searchParams.get("VPlusGameId");
     if (gamei) {
         let map = maps[gamei]
+        window.map=map;
         let gameid = map.gameId
+        if (map.SWORD_FIGHT) {
+            window.SWORD_FIGHT = true;
+        }
+        if (map.VOID_DIE) {
+            window.VOID_DIE = true;
+        }
         const s = document.createElement("script");
         Object.defineProperty(window, "GAME_ID", {
             value: gameid,
@@ -99,6 +141,8 @@
             configurable: false
         });
         console.log(`game id set to ${gameid}`);;
+    }else{
+        window.map=false;
     }
     async function initialize() {
         if (document.location.pathname == '/home' || document.location.pathname == '/social' || document.location.pathname == '/search' || document.location.pathname == '/games/2') {
@@ -203,10 +247,15 @@
             let tmap
             if (gamei) {
                 tmap = maps[gamei]
-
-                window._vortex.setSpawn(tmap.spawnX, tmap.spawnY, tmap.spawnZ);
+                let spawn = window.chooseSpawnPoint(tmap)
+                window._vortex.setSpawn(spawn.x, spawn.y, spawn.z, 0);
 
                 loadMapUrl(tmap.name, tmap.url)
+
+                if (tmap.skyColor) {
+                    scene.fog = new THREE.Fog(tmap.skyColor, 192, 480);
+                    renderer.setClearColor(tmap.skyColor);
+                }
             }
 
             // gui stuff
@@ -277,6 +326,8 @@
                         loaded = false
                     } else {
                         loadMapUrl(map.name, map.url);
+                        let spawn = window.chooseSpawnPoint(map)
+                        window._vortex.setSpawn(spawn.x, spawn.y, spawn.z, 0);
                         btn.innerHTML = map.name + '(Loaded)'
                         loaded = true
                     }
@@ -338,7 +389,7 @@
         if (typeof connect != 'undefined') connect()
 
         let watermark = document.createElement('a')
-        watermark.innerHTML = 'Vortex2+2 v0.1.0 by @inuk | Bootstrapper & Application by @cod.io'
+        watermark.innerHTML = 'Vortex2+2 v0.1.0 by @inuk & Vortex AIS v0.2 by @cod.io'
         Object.assign(watermark.style, {
             position: 'fixed',
             bottom: '5px',
