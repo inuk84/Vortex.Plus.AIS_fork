@@ -23,10 +23,10 @@ let shaders = (function() {
     const SHADOW_MAP_SIZE = 512; //Quality, ts has proven to tank your performance
     const SHADOW_UPDATE_INTERVAL = 5; //How often you want your little shadows to update
     const DAY_LENGTH_SECONDS = 2400; //This is only set to 240 for faster times to test out both day and night
-    const DAY_SATURATION = 0.92; //How do you love your sugar?
+    const DAY_SATURATION = 1.18; //How do you love your sugar?
     const NIGHT_SATURATION = 0.50; //How do you hate your darkness?
-    const MAX_SCENE_EXPOSURE = 0.72;
-    const MIN_SCENE_EXPOSURE = 0.90;
+    const MAX_SCENE_EXPOSURE = 1.15;
+    const MIN_SCENE_EXPOSURE = 0.82;
     function log(...args) {
         console.info('Raytracing or DLSS 3.5?', ...args);
     }
@@ -63,7 +63,7 @@ let shaders = (function() {
             float noise(vec2 p) {vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f); float a = hash(i); float b = hash(i + vec2(1.0, 0.0)); float c = hash(i + vec2(0.0, 1.0)); float d = hash(i + vec2(1.0, 1.0)); return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);}
             vec3 filmic(vec3 x) {x = max(vec3(0.0), x - 0.004); return (x * (6.2 * x + 0.5)) / (x * (6.2 * x + 1.7) + 0.06);}
             vec3 getRay(vec2 uv) {vec2 ndc = uv * 2.0 - 1.0; vec4 view = projectionInv * vec4(ndc, 1.0, 1.0); view.xyz /= max(view.w, 0.0001); return normalize((cameraWorld * vec4(view.xyz, 0.0)).xyz);}
-            vec3 sky(vec3 rd, vec3 sun) {float h = sat(rd.y * 0.5 + 0.5); vec3 low = vec3(0.45, 0.70, 0.95); vec3 high = vec3(0.05, 0.18, 0.38); float glow = pow(sat(dot(rd, sun)), 18.0); float core = pow(sat(dot(rd, sun)), 320.0); return mix(low, high, h) + vec3(1.0, 0.74, 0.42) * glow * 0.65 + vec3(1.0, 0.92, 0.76) * core * 3.0;}
+            vec3 sky(vec3 rd, vec3 sun) {float h = sat(rd.y * 0.5 + 0.5); vec3 low = vec3(0.72, 0.82, 0.92); vec3 high = vec3(0.28, 0.45, 0.68); float glow = pow(sat(dot(rd, sun)), 18.0); float core = pow(sat(dot(rd, sun)), 320.0); return mix(low, high, h) + vec3(1.0, 0.74, 0.42) * glow * 0.65 + vec3(1.0, 0.95, 0.80) * core * 3.0;}
             float sphereHit(vec3 ro, vec3 rd, vec3 c, float r) {vec3 oc = ro - c; float b = dot(oc, rd); float h = b * b - dot(oc, oc) + r * r; if (h < 0.0) return -1.0; h = sqrt(h); float t = -b - h; return t > 0.0 ? t : -b + h; }
             void main() {
                 vec2 uv = vUv; vec2 px = 1.0 / max(resolution, vec2(1.0)); vec2 fromCenter = uv - 0.5;
@@ -76,16 +76,16 @@ let shaders = (function() {
                 float edge = sat(length(grad) * 14.0);
                 vec3 ro = cameraPos; vec3 rd = getRay(uv); vec3 sun = normalize(sunDir); vec3 moon = normalize(moonDir);
                 float nightAmount = 1.0 - dayAmount; float sunAmount = sat(dot(rd, sun)); float moonAmount = sat(dot(rd, moon)); float sunBloom = (pow(sunAmount, 80.0) * 0.45 + pow(sunAmount, 10.0) * 0.035) * (dayAmount + twilightAmount * 0.55); float moonBloom = (pow(moonAmount, 120.0) * 0.11 + pow(moonAmount, 18.0) * 0.018) * nightAmount;
-                col += vec3(1.0, 0.70, 0.42) * sunBloom; col += vec3(0.28, 0.34, 0.56) * moonBloom;
+                col += vec3(1.0, 0.82, 0.55) * sunBloom; col += vec3(0.28, 0.34, 0.56) * moonBloom;
                 float groundT = (1.6 - ro.y) / max(rd.y, -0.0001);
-                if (groundT > 0.0 && rd.y < -0.001) {vec3 gp = ro + rd * groundT; float wet = 0.08 + 0.07 * noise(gp.xz * 0.035 + time * 0.05); float fresnel = pow(1.0 - sat(abs(dot(rd, vec3(0.0, 1.0, 0.0)))), 4.0); vec3 refl = sky(reflect(rd, vec3(0.0, 1.0, 0.0)), sun); float studSheen = pow(sat(sin(gp.x * 3.14159) * sin(gp.z * 3.14159)), 18.0) * 0.05; col = mix(col, refl, sat(wet * fresnel * 0.42)); col += vec3(0.35, 0.65, 0.42) * studSheen;}
+                if (groundT > 0.0 && rd.y < -0.001) {vec3 gp = ro + rd * groundT; float wet = 0.08 + 0.07 * noise(gp.xz * 0.035 + time * 0.05); float fresnel = pow(1.0 - sat(abs(dot(rd, vec3(0.0, 1.0, 0.0)))), 4.0); vec3 refl = sky(reflect(rd, vec3(0.0, 1.0, 0.0)), sun); float studSheen = pow(sat(sin(gp.x * 3.14159) * sin(gp.z * 3.14159)), 18.0) * 0.05; col = mix(col, refl, sat(wet * fresnel * 0.18)); col += vec3(0.42, 0.72, 0.38) * studSheen;}
                 vec3 mirrorCenter = vec3(sin(time * 0.22) * 18.0, 32.0 + sin(time * 0.31) * 3.0, cos(time * 0.2) * 18.0);
                 float sphereT = sphereHit(ro, rd, mirrorCenter, 9.0);
                 if (sphereT > 0.0) {vec3 hp = ro + rd * sphereT; vec3 n = normalize(hp - mirrorCenter); vec3 reflected = sky(reflect(rd, n), sun); float rim = pow(1.0 - sat(dot(-rd, n)), 3.0); float shade = sat(dot(n, sun) * 0.5 + 0.5); vec3 orb = reflected * (0.25 + 0.75 * shade) + vec3(0.65, 0.9, 1.0) * rim; col = mix(col, orb, 0.18 * (1.0 - smoothstep(0.0, 160.0, sphereT)));}
                 float ao = 1.0 - edge * 0.16;
                 col *= ao; col += edge * mix(vec3(0.018, 0.028, 0.04), vec3(0.03, 0.045, 0.062), dayAmount);
                 float exposurePulse = mix(0.10, 0.72, dayAmount) + twilightAmount * 0.055 + sin(time * 0.18) * 0.006;
-                col = filmic(col * exposurePulse); col = mix(col, col * col * (3.0 - 2.0 * col), mix(0.05, 0.12, dayAmount)); col *= 0.70 + vignette * 0.22; col = mix(col * vec3(0.26, 0.31, 0.48), col, dayAmount); col += vec3(0.18, 0.08, 0.025) * twilightAmount * 0.08;
+                col = filmic(col * exposurePulse); col = mix(col, col * col * (3.0 - 2.0 * col), mix(0.05, 0.12, dayAmount)); col *= 0.92 + vignette * 0.08; col = mix(col * vec3(0.26, 0.31, 0.48), col, dayAmount); col += vec3(0.18, 0.08, 0.025) * twilightAmount * 0.08;
                 float gray = dot(col, vec3(0.299, 0.587, 0.114));
                 float saturation = mix(${NIGHT_SATURATION.toFixed(2)}, ${DAY_SATURATION.toFixed(2)}, dayAmount);
                 col = mix(vec3(gray), col, saturation); col *= mix(${MIN_SCENE_EXPOSURE.toFixed(2)}, ${MAX_SCENE_EXPOSURE.toFixed(2)}, dayAmount);
@@ -180,7 +180,7 @@ let shaders = (function() {
                 return material;
             }
             if (!THREE.MeshStandardMaterial) return material;
-            const next = new THREE.MeshStandardMaterial({ color: material.color ? material.color.clone() : new THREE.Color(0xffffff), map: material.map || null, transparent: !!material.transparent, opacity: material.opacity == null ? 1 : material.opacity, roughness: 0.46, metalness: 0.035, });
+            const next = new THREE.MeshStandardMaterial({ color: material.color ? material.color.clone() : new THREE.Color(0xffffff), map: material.map || null, transparent: !!material.transparent, opacity: material.opacity == null ? 1 : material.opacity, roughness: 0.72, metalness: 0.01, });
             next.userData.vortexRaytraced = true;
             upgradedMaterials += 1;
             return next;
@@ -197,8 +197,8 @@ let shaders = (function() {
         }
         scene.add = function patchedSceneAdd(...objects) { const result = originalSceneAdd.apply(this, objects); objects.forEach(upgradeObjectTree); return result; };
         upgradeObjectTree(scene);
-        scene.fog = new THREE.FogExp2(0x9ed7ff, 0.0028);
-        const hemi = new THREE.HemisphereLight(0xcdeeff, 0x172018, 0.34);
+        scene.fog = new THREE.FogExp2(0xcbb38a, 0.0022);
+        const hemi = new THREE.HemisphereLight(0xfff1d6, 0x3b2f1f, 0.50);
         const rim = new THREE.DirectionalLight(0xb7ddff, 0.28);
         const glint = new THREE.PointLight(0x8fdcff, 0.72, 80, 2.0);
         const shadowTarget = new THREE.Object3D();
@@ -394,7 +394,7 @@ let shaders = (function() {
             mixColor(rim.color, [0.16, 0.20, 0.38], [0.70, 0.84, 1.00], dayAmount);
             mixColor(shadowSun.color, [0.35, 0.28, 0.18], [1.00, 0.88, 0.66], dayAmount);
             if (warmAmount > 0.02) { rim.color.lerp(new THREE.Color(0xff8a3d), warmAmount * 0.45); shadowSun.color.lerp(new THREE.Color(0xff9d43), warmAmount * 0.35); }
-            hemi.intensity = enabled ? lerp(0.012, 0.26, dayAmount) + twilightAmount * 0.018 : 0;
+            hemi.intensity = enabled ? lerp(0.10, 0.55, dayAmount) + twilightAmount * 0.018 : 0;
             rim.intensity = enabled ? lerp(0.006, 0.16, dayAmount) + warmAmount * 0.08 : 0;
             shadowSun.intensity = enabled ? (0.66 * activeShadow + warmAmount * 0.16) : 0;
             moonLight.intensity = enabled ? 0.105 * smoothstep(0.22, 0.94, nightAmount) * (1 - twilightAmount * 0.7) : 0;
