@@ -13,6 +13,11 @@ function _clonePlayerFBX() {
     if (!src) return null;
 
     const clone = src.clone(true);
+    const toRemove = [];
+    clone.traverse(o => {
+        if (o.name === "_shirtOverlay") toRemove.push(o);
+    });
+    toRemove.forEach(o => o.parent?.remove(o));
 
     const srcBones = {}, cloneBones = {};
     src.traverse(n => { if (_isBone(n)) srcBones[n.name] = n; });
@@ -479,11 +484,11 @@ let _reconnectAttempts = 0;
 const _MAX_RECONNECTS = 3;
 
 async function connect() {
-    const res = await fetch(`/api/ws-ticket?game_id=${window.GAME_ID || 0}&fingerprint=${encodeURIComponent(window._fingerprint || '')}&fp_token=`).then(r => r.ok ? r.json() : null);
+    const res = await fetch(`/api/ws-ticket?game_id=${window.GAME_ID || 0}&fingerprint=${encodeURIComponent(window._fingerprint || '')}?fp_token=`).then(r => r.ok ? r.json() : null);
     if (!res) { console.log('failed to connect'); setTimeout(connect, 4000); return; }
 
-    const proto = location.protocol === "https:" ? "wss" : "ws";
-    ws = new WebSocket(proto + "://" + location.host + "/ws/play?t=" + res.ticket);
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(`${proto}://${location.host}/ws/play?t=${res.ticket}`);
 
     ws.onopen = () => {
         console.log('websocket opened');
@@ -593,7 +598,7 @@ function handle(d) {
                 _showHealthBar(p.id)
             }
             if (d.shirt_id) {
-                _vortex.applyShirt(d.shirt_id ? "/shirt/" + d.shirt_id + ".png" : null);
+                _vortex.applyShirt(d.shirt_id ? "/assets/clothing/" + d.shirt_id + ".png" : null);
             }
             _showHealthBar(myId);
             fetchFriendData();
@@ -656,40 +661,13 @@ function handle(d) {
             break;
         }
 
-        case "muted_list": {
-            window.adminPanel?.onMuted?.(d.user_id, d.username);
-            mutedSet.add(d.user_id);
-            Leaderboard.updateStatus(d.user_id, "muted");
-            break;
-        }
-        case "unmuted_list": {
-            window.adminPanel?.onUnmuted?.(d.user_id);
-            mutedSet.delete(d.user_id);
-            Leaderboard.updateStatus(d.user_id, "online");
-            break;
-        }
-        case "banned_list": {
-            window.adminPanel?.onBanned?.(d.user_id);
-            bannedSet.add(d.user_id);
-            kickedSet.add(d.user_id);
-            Leaderboard.updateStatus(d.user_id, "banned");
-            break;
-        }
-        case "chat_count": {
-            window.adminPanel?.chat_count?.(d.unread_count);
-            break;
-        }
-        case "shirt_changed": {
-            window.adminPanel?.shirt_changed?.(d.user_id);
-            break;
-        }
         case "shirt_update": {
-            const rp = remotePlayers.get(d.id);
+            const rp = remotes.get(d.id);
             if (rp?.meshes) {
-                _vortex.applyShirtToMesh(rp.meshes.shirtMesh, d.shirt_id ? "/shirt/" + d.shirt_id + ".png" : null);
+                _vortex.applyShirtToMesh(rp.meshes.shirtMesh, d.shirt_id ? "/assets/clothing/" + d.shirt_id + ".png" : null);
             } else {
-                const pending = pendingPlayers.get(d.id);
-                if (pending) pending.shirt_id = d.shirt_id;
+                const pending = pendingPlayers.get(msg.id);
+                if (pending) pending.shirt_id = msg.shirt_id;
             }
             break;
         }

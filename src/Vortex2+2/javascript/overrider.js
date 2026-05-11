@@ -18,8 +18,8 @@ let observer = new MutationObserver(function (mutations) {
     for (let m of mutations) {
         for (let node of m.addedNodes) {
             if (node.tagName === "SCRIPT") {
-                let divided = node.src.split('/');
-                let scriptName = divided[divided.length - 1]
+                let scriptName = node.src.split('/').pop().split('?')[0];
+                console.log(scriptName)
                 if (redirects[scriptName]) {
                     node.src = local_thingy_platform_check('redirects/'+redirects[scriptName]);
                 }
